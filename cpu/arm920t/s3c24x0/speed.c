@@ -85,7 +85,7 @@ static ulong get_PLLCLK(int pllreg)
     p = ((r & 0x003F0) >> 4) + 2;
     s = r & 0x3;
 
-	if ( gd->bd-bi_arm_number == MACH_TYPE_SMDK2410 )
+	if ( gd->bd->bi_arch_number == MACH_TYPE_SMDK2410 )
 		return ((CONFIG_SYS_CLK_FREQ * m) / (p << s));
 	else
 		return ((CONFIG_SYS_CLK_FREQ * m * 2) / (p << s)); //s3c2440
