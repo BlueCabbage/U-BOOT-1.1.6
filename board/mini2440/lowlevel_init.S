@@ -120,11 +120,19 @@
 /* REFRESH parameter */
 #define REFEN		 	0x1	/* Refresh enable */
 #define TREFMD		 	0x0	/* CBR(CAS before RAS)/Auto refresh */
-#define Trp		 	0x0	/* 2clk */
+//#define Trp		 	0x0	/* 2clk */
 #define Trc		 	0x3	/* 7clk */
 #define Tchr		 	0x2	/* 3clk */
 
+#if defined(CONFIG_S3C2440)
+#define Trp				0x02 /* 4clk */
 #define REFCNT		 	0x4f4	/* period=7.8125us, HCLK=100MHz, (2048+1-7.8125*100) */
+#else
+#define Trp				0x0 /* 2clk */
+#define REFCNT		 	0x459	/* period=7.8125us, HCLK=100MHz, (2048+1-7.8125*100) */
+#endif
+
+
 /**************************************/
 
 _TEXT_BASE:
@@ -136,8 +144,11 @@ lowlevel_init:
 	/* make r0 relative the current location so that it */
 	/* reads SMRDATA out of FLASH rather than memory ! */
 	ldr     r0, =SMRDATA
-	ldr	r1, _TEXT_BASE
+//	ldr	r1, _TEXT_BASE
+	ldr r1, =lowlevel_init
 	sub	r0, r0, r1
+	adr r3, lowlevel_init	/* r3 <- current position of code */
+	add r0, r0, r3
 	ldr	r1, =BWSCON	/* Bus Width Status Controller */
 	add     r2, r0, #13*4
 0:

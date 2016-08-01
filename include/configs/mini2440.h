@@ -34,7 +34,8 @@
  * (easy to change)
  */
 #define CONFIG_ARM920T		1	/* This is an ARM920T Core	*/
-#define	CONFIG_S3C2410		1	/* in a SAMSUNG S3C2410 SoC     */
+//#define	CONFIG_S3C2410		1	/* in a SAMSUNG S3C2410 SoC     */
+#define CONFIG_S3C2440		1
 #define CONFIG_SMDK2410		1	/* on a SAMSUNG SMDK2410 Board  */
 
 /* input clock of PLL */
@@ -108,7 +109,7 @@
  * Miscellaneous configurable options
  */
 #define	CFG_LONGHELP				/* undef to save memory		*/
-#define	CFG_PROMPT		"SMDK2410 # "	/* Monitor Command Prompt	*/
+#define	CFG_PROMPT		"Cabbage # "	/* Monitor Command Prompt	*/
 #define	CFG_CBSIZE		256		/* Console I/O Buffer Size	*/
 #define	CFG_PBSIZE (CFG_CBSIZE+sizeof(CFG_PROMPT)+16) /* Print Buffer Size */
 #define	CFG_MAXARGS		16		/* max number of command args	*/

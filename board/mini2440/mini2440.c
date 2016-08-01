@@ -28,6 +28,10 @@
 #include <common.h>
 #include <s3c2410.h>
 
+/////////////////////////////////////////////////////////
+#include <video_fb.h>
+
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #define FCLK_SPEED 1
@@ -56,7 +60,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 /* s3c2440: MPLL = (2*m*Fin)/(p*2^s), UPLL = (m*Fin)/(p*2^s) */
 /* m = M (the value for divider M) + 8, p = P (the value for divider P) + 2 */
-#define S3C2440_MPLL_400MHZ			((0x5c<<12)|(0x01<<4)|(0x01))
+#define S3C2440_MPLL_405MHZ			((0x7f<<12)|(0x02<<4)|(0x01))
 #define S3C2440_UPLL_48MHZ			((0x38<<12)|(0x02<<4)|(0x02))
 #define S3C2440_CLKDIV				0X05	/* FCLK:HCLK:PCLK = 1:2:8 */
 
@@ -101,12 +105,20 @@ int board_init (void)
 
 	/* set up the I/O ports */
 	gpio->GPACON = 0x007FFFFF;
-	gpio->GPBCON = 0x00044555;
+
+#if defined(CONFIG_S3C2440)
+	gpio->GPBCON = 0x00295551;
+#else
+	gpio->GPBCON = 0x00044556;
+#endif
+
 	gpio->GPBUP = 0x000007FF;
 	gpio->GPCCON = 0xAAAAAAAA;
-	gpio->GPCUP = 0x0000FFFF;
+//	gpio->GPCUP = 0x0000FFFF;
+	gpio->GPCUP = 0XFFFFFFFF;
 	gpio->GPDCON = 0xAAAAAAAA;
-	gpio->GPDUP = 0x0000FFFF;
+//	gpio->GPDUP = 0x0000FFFF;
+	gpio->GPDUP = 0XFFFFFFFF;
 	gpio->GPECON = 0xAAAAAAAA;
 	gpio->GPEUP = 0x0000FFFF;
 	gpio->GPFCON = 0x000055AA;
@@ -116,8 +128,10 @@ int board_init (void)
 	gpio->GPHCON = 0x002AFAAA;
 	gpio->GPHUP = 0x000007FF;
 
+	gpio->GPBDAT = 0X00000000;
+
 	/* Support both s3c2440 and s3c2410 */
-	if ((gpio->GSTATUS1 == 0X32410000) || (gpio->GSTATUS1 == 0X32410002 )) {
+	if (0 & ((gpio->GSTATUS1 == 0X32410000) || (gpio->GSTATUS1 == 0X32410002 ))) {
 		/* FLCK : HCLK: PCLK = 1:2:4 */
 		clk_power->CLKDIVN = S3C2410_CLKDIV;
 		/* set cpu async... mode */
@@ -159,7 +173,7 @@ int board_init (void)
 		clk_power->LOCKTIME = 0XFFFFFF;
 		
 		/* SET MPLL */
-		clk_power->MPLLCON = S3C2440_MPLL_400MHZ;
+		clk_power->MPLLCON = S3C2440_MPLL_405MHZ;
 
 		/* AFTER SET MPLL, DELAY SOME TIME TO SET UPLL */
 		delay(4000);
@@ -194,3 +208,18 @@ int dram_init (void)
 
 	return 0;
 }
+
+#ifdef CONFIG_CMD_NET
+int board_eth_init(bd_t *bis)
+{
+	#ifdef CONFIG_CS8900
+		rc = cs8900_initialize(0, CONFIG_CS8900_BASE);
+	#endif
+	#ifdef CONFIG_DRIVER_DM9000
+		rc = dm9000_initialize(bis);
+	#endif
+		return rc;
+}
+#endif
+
+

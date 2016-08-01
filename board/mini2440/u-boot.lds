@@ -33,6 +33,7 @@ SECTIONS
 	.text      :
 	{
 	  cpu/arm920t/start.o	(.text)
+	  board/mini2440/lowlevel_init.o	(.text)
 	  *(.text)
 	}
 

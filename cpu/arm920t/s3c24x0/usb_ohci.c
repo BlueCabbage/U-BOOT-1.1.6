@@ -40,9 +40,9 @@
 
 #ifdef CONFIG_USB_OHCI
 
-#if defined(CONFIG_S3C2400)
+#if defined(CONFIG_S3C2400) ||  defined(CONFIG_S3C2440)
 #include <s3c2400.h>
-#elif defined(CONFIG_S3C2410)
+#elif defined(CONFIG_S3C2410) ||  defined(CONFIG_S3C2440)
 #include <s3c2410.h>
 #endif
 

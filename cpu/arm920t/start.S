@@ -114,21 +114,34 @@ reset:
 	mrs	r0,cpsr
 	bic	r0,r0,#0x1f
 	orr	r0,r0,#0xd3
-	msr	cpsr,r0
+	msr	cpsr,r0             @  svc mode and enable IRQ FIQ
 
 /* turn off the watchdog */
 #if defined(CONFIG_S3C2400)
 # define pWTCON		0x15300000
 # define INTMSK		0x14400008	/* Interupt-Controller base addresses */
 # define CLKDIVN	0x14800014	/* clock divisor register */
-#elif defined(CONFIG_S3C2410)
+#elif defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
 # define pWTCON		0x53000000
 # define INTMSK		0x4A000008	/* Interupt-Controller base addresses */
 # define INTSUBMSK	0x4A00001C
 # define CLKDIVN	0x4C000014	/* clock divisor register */
 #endif
 
-#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410)
+/* Add 2440 regsister define  */
+/* S3C2400: MPLL = (2*m*Fin) / (p * 2^s) */
+/* S3C2440: UPLL = (m * Fin) / (p * 2^s) */
+/* m = M(the value for divider M) + 8    */
+/* p = P(the value for divider P) + 2    */
+#define S3C2440_CLK_CTL_BASE	0x4c000000
+#define S3C2440_CLK_CLKDIVN		0X4C000014
+#define S3C2440_MDIV_405		(0X7f<<12)
+#define S3C2440_PDIV_405		(0X02<<4)
+#define S3C2440_SDIV_405		(0X01)
+#define S3C2440_CLKDIV_148		(0X05)		/* FCLK : HCLK : PCLK = 1:4:8  UCLK = UPLL */
+
+
+#if defined(CONFIG_S3C2400) || defined(CONFIG_S3C2410) || defined(CONFIG_S3C2440)
 	ldr     r0, =pWTCON
 	mov     r1, #0x0
 	str     r1, [r0]
@@ -140,17 +153,39 @@ reset:
 	ldr	r0, =INTMSK
 	str	r1, [r0]
 # if defined(CONFIG_S3C2410)
-	ldr	r1, =0x3ff
+@	ldr	r1, =0x3ff
+	ldr r1, =0x7ff
 	ldr	r0, =INTSUBMSK
 	str	r1, [r0]
 # endif
+# if defined(CONFIG_S3C2440)
+	ldr r1, =0x7ff
+	ldr r0, =INTSUBMSK
+	str r1, [r0]
+#endif
 
-	/* FCLK:HCLK:PCLK = 1:2:4 */
-	/* default FCLK is 120 MHz ! */
-	ldr	r0, =CLKDIVN
-	mov	r1, #3
-	str	r1, [r0]
-#endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 */
+
+# if defined(CONFIG_S3C2440)
+	/* FCLK:HCLK:PCLK */
+	ldr r0, =S3C2440_CLK_CLKDIVN
+	mov r1, #5
+	str r1, [r0]
+
+	mrc p15, 0, r1, c1, c0, 0
+	orr r1, r1, #0xc0000000   /* set C1 bit(31): Asynchronous clock selset, set C1 bit(30) not FastBus select */
+	mcr p15, 0, r1, c1, c0, 0
+
+	mov r1, #S3C2440_CLK_CTL_BASE
+	mov r2, #S3C2440_MDIV_405
+	add r2, r2, #S3C2440_PDIV_405
+	add r2, r2, #S3C2440_SDIV_405
+	str r2, [r1, #0x04]		 /* MPLLCON */
+#endif
+
+#endif	/* CONFIG_S3C2400 || CONFIG_S3C2410 || CONFIG_S3C2440 */
+
+
+
 
 	/*
 	 * we do sys-critical inits only at reboot,
@@ -162,22 +197,154 @@ reset:
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
 relocate:				/* relocate U-Boot to RAM	    */
+/************************ CHECK_CODE_POSITON ***************************/ 
 	adr	r0, _start		/* r0 <- current position of code   */
 	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
 	cmp     r0, r1                  /* don't reloc during debug         */
 	beq     stack_setup
-
-	ldr	r2, _armboot_start
-	ldr	r3, _bss_start
-	sub	r2, r3, r2		/* r2 <- size of armboot            */
-	add	r2, r0, r2		/* r2 <- source end address         */
-
-copy_loop:
-	ldmia	r0!, {r3-r10}		/* copy from source address [r0]    */
-	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
-	cmp	r0, r2			/* until source end addreee [r2]    */
-	ble	copy_loop
+/************************ CHECK_CODE_POSITION **************************/
+@
+@/************************ CHECK_BOOT_POSITION **************************/
+@	ldr		r1, =((4<<28)|(3<<4)|(3<<2))		/* address of Internal sram 0X4000003C */
+@	mov		r0, #0
+@	str		r0, [r1]
+@
+@	mov		r1, #0x3c							/* address of mem 0x0000003c */
+@	ldr		r0, [r1]
+@	cmp		r0, #0
+@	bne		relocate
+@
+@	/* recovery */
+@	ldr		r0, =(0xdeadbeef)
+@	ldr		r1, =((4<<28)|(3<<4)|(3<<2))
+@	str		r0, [r1]
+@/************************ CHECK_BOOT_POSITION **************************/
+@
+@
+@
+@/************************ NAND_BOOT ************************************/
+@	#define LENGTH_UBOOT	0X60000
+@	#define NAND_CTL_BASE	0X4E000000
+@
+@	#ifdef CONFIG_S3C2440
+@	/* Offset */
+@	#define oNFCONF 0X00
+@	#define oNFCONT 0X04
+@	#define oNFCMD	0x08
+@	#define	oNFSTAT 0x20
+@
+@	@RESET NAND
+@	mov		r1, #NAND_CTL_BASE
+@	ldr		r2, =((7<<12)|(7<<8)|(7<<4)|(0<<0))
+@	str		r2, [r1, #oNFCONF]
+@	ldr		r2, [r1, #oNFCONF]
+@
+@	ldr		r2, =((1<<4)|(0<<1)|(1<<0))		@ Actice low CE Control
+@	str		r2, [r1, #oNFCONT]
+@	ldr		r2, [r1, #oNFCONT]
+@
+@	ldr		r2, =(0x6		@ RnB Clear)
+@	str		r2, [r1, #oNFSTAT]
+@	ldr		r2, [r1, #oNFSTAT]
+@
+@	mov		r2, #oxff						@ Reset command
+@	strb	r2, [r1, #onFCMD]
+@	mov		r3, #0							@ wait
+@
+@
+@nand1: 
+@	add		r3, r2, 0x1
+@	cmp		r3, #0xa
+@	blt		nand1
+@
+@nand2:
+@	ldr		r2, [r1, #oNFSTAT]				@ wait ready
+@	tst		r2, #0x04
+@	beq		nand2
+@
+@	ldr		r2, [r1, #oNFCONT]
+@	orr		r2, r2, #0x2					@ Flash Memory Chip Disable
+@	str		r2, [r1, #oNFCONT]
+@
+@	@ Get read to call C functions (for nand_read())
+@	ldr		sp, DW_STACK_START				@ setup stack pointer
+@	mov     fp, #0							@ no previous frame, so fp=0;
+@
+@	@copy U-Boot to RAM
+@	ldr		r0, =TEXT_BASE
+@	mov		r1, #0x0
+@	mov		r2, #LENGTH_UBOOT
+@	bl		nand_read_II
+@	tst		r0, #0x0
+@	beq		ok_nand_read
+@
+@bad_nand_read:
+@loop2:
+@	b		loop2		@ infinite loop
+@ok_nand_read:
+@	@ verify
+@	mov		r0, #0
+@	ldr		r1, =TEXT_BASE
+@	mov		r2, #0x400						@ 4 Bytes * 1024 = 4K-bytes
+@
+@go_next:
+@	ldr		r3, [r0], #4
+@	ldr		r4, [r1], #4
+@	teq		r3, r4
+@	bne		notmatch
+@	subs	r2, r2, #4
+@	beq		stack_setup
+@	bne		go_next
+@
+@not_match:
+@loop3:
+@	b		loop3		@ infinite loop
+@
+@#endif
+@/****************************** NAND_BOOT ***************************************/
+@
+@
+@/****************************** NOR_BOOT ****************************************/
+@relocate:
+@	/************************** CHECK_FOR_MAGIC_NUMBER *************************/
+@		ldr		r1, =(0xdeadbeef)
+@		cmp		r0, r1
+@		bne		loop3
+@	/************************** CHECK_FOR_MAGIC_NUMBER *************************/
+@		adr		r0, _start						/* r0 <- current position of code */
+@		ldr		r1, _TEXT_BASE					/* test if run fram flash or RAM  */
+@		ldr		r2, _arm_boot_start			
+@		ldr		r3, _bss_start
+@		sub		r2, r3, r2						/* r2 <- size of armboot */
+@
+@	copy_loop:
+@		ldmia	r0!, {r3-r10}					/* copy from source address [r0] */
+@		stmia	r1!, {r3-r10}					/* copy to target address [r1]   */
+@		cmp		r1, r0							/* until source and address [r2] */
+@		ble		copy_loop
+@												   
+@/****************************** NOR_BOOT ****************************************/	
+@	
+@@
+@@	ldr	r2, _armboot_start
+@@	ldr	r3, _bss_start
+@@	sub	r2, r3, r2		/* r2 <- size of armboot            */
+@@	add	r2, r0, r2		/* r2 <- source end address         */
+@@
+@@copy_loop:
+@@	ldmia	r0!, {r3-r10}		/* copy from source address [r0]    */
+@@	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
+@@	cmp	r0, r2			/* until source end addreee [r2]    */
+@@	ble	copy_loop
+@
 #endif	/* CONFIG_SKIP_RELOCATE_UBOOT */
+
+
+
+
+
+
+
 
 	/* Set up the stack						    */
 stack_setup:
@@ -199,30 +366,13 @@ clbss_l:str	r2, [r0]		/* clear loop...                    */
 	cmp	r0, r1
 	ble	clbss_l
 
-#if 0
-	/* try doing this stuff after the relocation */
-	ldr     r0, =pWTCON
-	mov     r1, #0x0
-	str     r1, [r0]
-
-	/*
-	 * mask all IRQs by setting all bits in the INTMR - default
-	 */
-	mov	r1, #0xffffffff
-	ldr	r0, =INTMR
-	str	r1, [r0]
-
-	/* FCLK:HCLK:PCLK = 1:2:4 */
-	/* default FCLK is 120 MHz ! */
-	ldr	r0, =CLKDIVN
-	mov	r1, #3
-	str	r1, [r0]
-	/* END stuff after relocation */
-#endif
-
 	ldr	pc, _start_armboot
 
 _start_armboot:	.word start_armboot
+
+
+
+
 
 
 /*
@@ -266,6 +416,10 @@ cpu_init_crit:
 	mov	lr, ip
 	mov	pc, lr
 #endif /* CONFIG_SKIP_LOWLEVEL_INIT */
+
+
+
+
 
 /*
  *************************************************************************
