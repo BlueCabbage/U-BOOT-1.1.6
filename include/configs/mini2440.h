@@ -79,7 +79,7 @@
 #define CONFIG_COMMANDS \
 			(CONFIG_CMD_DFL	 | \
 			CFG_CMD_CACHE	 | \
-			/*CFG_CMD_NAND	 |*/ \
+			CFG_CMD_NAND	 | \
 			/*CFG_CMD_EEPROM |*/ \
 			/*CFG_CMD_I2C	 |*/ \
 			/*CFG_CMD_USB	 |*/ \
@@ -178,5 +178,13 @@
 
 #define	CFG_ENV_IS_IN_FLASH	1
 #define CFG_ENV_SIZE		0x10000	/* Total Size of Environment Sector */
+
+
+
+/* NAND_FLASH */
+#define	CFG_MAX_NAND_DEVICE		1	/* The numbers of nand flash device */
+#define	NAND_MAX_CHIPS		1	/* Each Nand flash device is consist of 1 device */
+#define CFG_NAND_BASE		0	/* The base address of nand flash, will redefine when use nand flash */
+
 
 #endif	/* __CONFIG_H */

@@ -21,10 +21,17 @@
 # MA 02111-1307 USA
 #
 
-PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
-	-msoft-float
+#PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8 \
+#	-msoft-float
 
+
+
+
+# fix arm-none-eabi-ld: error, EABI version 5, but target u-boot has EABI versionn 0
+PLATFORM_RELFLAGS += -fno-strict-aliasing  -fno-common -ffixed-r8
 PLATFORM_CPPFLAGS += -march=armv4
+
+
 # =========================================================================
 #
 # Supply options according to compiler version
