@@ -28,6 +28,9 @@
 #include <config.h>
 #include <version.h>
 
+	#define STACK_BASE		0X33F00000
+	#define STACK_SIZE		0X8000
+
 
 /*
  *************************************************************************
@@ -77,8 +80,12 @@ _TEXT_BASE:
 
 .globl _armboot_start
 _armboot_start:
-	.word _start
+	.word _start 
 
+/* boot from nand flash, c function backup stack */
+.align 2
+DW_STACK_START:
+	.word	STACK_BASE + STACK_SIZE - 4
 /*
  * These are defined in the board-specific linker script.
  */
@@ -196,7 +203,7 @@ reset:
 #endif
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
-relocate:				/* relocate U-Boot to RAM	    */
+@relocate:				/* relocate U-Boot to RAM	    */
 /************************ CHECK_CODE_POSITON ***************************/ 
 	adr	r0, _start		/* r0 <- current position of code   */
 	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
@@ -220,78 +227,88 @@ relocate:				/* relocate U-Boot to RAM	    */
 @	str		r0, [r1]
 @/************************ CHECK_BOOT_POSITION **************************/
 @
-@
-@
-@/************************ NAND_BOOT ************************************/
-@	#define LENGTH_UBOOT	0X60000
-@	#define NAND_CTL_BASE	0X4E000000
-@
+
+
+/************************ NAND_BOOT ************************************/
+#ifdef CONFIG_S3C2440_NAND_BOOT 
+
+	#define LENGTH_UBOOT	0X30000
+	#define NAND_CTL_BASE	0X4E000000
+	#define STACK_BASE		0X33F00000
+	#define STACK_SIZE		0X8000
+
 @	#ifdef CONFIG_S3C2440
-@	/* Offset */
-@	#define oNFCONF 0X00
-@	#define oNFCONT 0X04
-@	#define oNFCMD	0x08
-@	#define	oNFSTAT 0x20
-@
-@	@RESET NAND
-@	mov		r1, #NAND_CTL_BASE
-@	ldr		r2, =((7<<12)|(7<<8)|(7<<4)|(0<<0))
-@	str		r2, [r1, #oNFCONF]
-@	ldr		r2, [r1, #oNFCONF]
-@
-@	ldr		r2, =((1<<4)|(0<<1)|(1<<0))		@ Actice low CE Control
-@	str		r2, [r1, #oNFCONT]
-@	ldr		r2, [r1, #oNFCONT]
-@
-@	ldr		r2, =(0x6		@ RnB Clear)
-@	str		r2, [r1, #oNFSTAT]
-@	ldr		r2, [r1, #oNFSTAT]
-@
-@	mov		r2, #oxff						@ Reset command
-@	strb	r2, [r1, #onFCMD]
-@	mov		r3, #0							@ wait
-@
-@
-@nand1: 
-@	add		r3, r2, 0x1
-@	cmp		r3, #0xa
-@	blt		nand1
-@
-@nand2:
+	/* Offset */
+	#define oNFCONF 0x00	// 0x4e000000
+	#define oNFCONT 0x04	// 0x4e000004
+
+	#define oNFCMD	0x08    // 0x4e000008
+	#define oNFADDR	0x0C    // 0x4e00000c
+	#define oNFDATA 0x10    // 0x4e000010
+	#define	oNFSTAT 0x20    // 0x4e000020
+	#define oNFECC	0x2c    // 0x4e00002c
+
+	@RESET NAND
+	mov		r1, #NAND_CTL_BASE
+@	ldr		r2, =((0<<12)|(3<<8)|(0<<4)|(3<<2)|(1<<1))
+	ldr		r2, =((7<<12)|(7<<8)|(7<<4)|(0<<0))
+	str		r2, [r1, #oNFCONF]
+
+	ldr		r2, =((1<<4)|(0<<1)|(1<<0))		@ Actice low CE Control
+	str		r2, [r1, #oNFCONT]
+
+	ldr		r2, =(0x6)		
+	str		r2, [r1, #oNFSTAT]
+
+	mov		r2, #0xff						@ Reset command
+	strb	r2, [r1, #oNFCMD]
+	mov		r3, #0							@ wait
+
+
+nanddelay: 
+	add		r3, r3, #0x1
+	cmp		r3, #0xa
+	blt		nanddelay
+
+@nandready:
 @	ldr		r2, [r1, #oNFSTAT]				@ wait ready
 @	tst		r2, #0x04
-@	beq		nand2
+@	beq		nandready
 @
 @	ldr		r2, [r1, #oNFCONT]
 @	orr		r2, r2, #0x2					@ Flash Memory Chip Disable
 @	str		r2, [r1, #oNFCONT]
-@
-@	@ Get read to call C functions (for nand_read())
-@	ldr		sp, DW_STACK_START				@ setup stack pointer
-@	mov     fp, #0							@ no previous frame, so fp=0;
-@
-@	@copy U-Boot to RAM
-@	ldr		r0, =TEXT_BASE
-@	mov		r1, #0x0
-@	mov		r2, #LENGTH_UBOOT
-@	bl		nand_read_II
-@	tst		r0, #0x0
+
+	@ Get ready to call C functions (for nand_read())
+	ldr		sp, DW_STACK_START				@ setup stack pointer
+	mov     fp, #0							@ no previous frame, so fp=0;
+
+	@copy U-Boot to RAM
+	ldr		r0, =TEXT_BASE					@ the begin addr of u-boot at RAM
+	mov		r1, #0x0						@ the begin addr of nand flash
+	mov		r2, #LENGTH_UBOOT				@ the length of u-boot(192k)
+	bl		nand_read_ll					@ c function, at board/mini2440/nand_read.c
+	tst		r0, #0x0
+	beq		stack_setup
+	bne		bad_nand_read
 @	beq		ok_nand_read
-@
-@bad_nand_read:
-@loop2:
-@	b		loop2		@ infinite loop
+
+
+bad_nand_read:
+loop2:
+	b		loop2		@ infinite loop
 @ok_nand_read:
 @	@ verify
+@	@ test the first 4K code, if match, relocate finish
 @	mov		r0, #0
 @	ldr		r1, =TEXT_BASE
-@	mov		r2, #0x400						@ 4 Bytes * 1024 = 4K-bytes
+@	mov		r2, #0x1000						@ 4 Bytes * 1024 = 4K-bytes
 @
 @go_next:
 @	ldr		r3, [r0], #4
 @	ldr		r4, [r1], #4
 @	teq		r3, r4
-@	bne		notmatch
+@	bne		not_match
 @	subs	r2, r2, #4
 @	beq		stack_setup
 @	bne		go_next
@@ -300,9 +317,9 @@ relocate:				/* relocate U-Boot to RAM	    */
 @loop3:
 @	b		loop3		@ infinite loop
 @
-@#endif
-@/****************************** NAND_BOOT ***************************************/
-@
+#endif
+/****************************** NAND_BOOT ***************************************/
+
 @
 @/****************************** NOR_BOOT ****************************************/
 @relocate:

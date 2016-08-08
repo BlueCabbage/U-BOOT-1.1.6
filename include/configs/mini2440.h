@@ -42,6 +42,21 @@
 #define CONFIG_SYS_CLK_FREQ	12000000/* the SMDK2410 has 12MHz input clock */
 
 
+/* ENV */
+//// NOR FLASH:
+//#define CONFIG_ENV_IS_IN_FLASH		1
+//#define CONFIG_ENV_OFFSET			0X40000
+//#define CONFIG_ENV_SIZE				0X20000
+//// NAND FLASH:
+//#define CONFIG_ENV_IS_IN_NAND		1
+//#define CONFIG_ENV_OFFSET			0X40000
+//#define	CONFIG_ENV_SIZE				0X20000
+//// EEPROM:
+//#define	CONFIG_ENV_IS_IN_EEPROM		1
+//#define CONFIG_ENV_OFFSET			0X000
+//#define CONFIG_ENV_SIZE				0X400 /* 1KB */
+
+
 #define USE_920T_MMU		1
 #undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff */
 
@@ -182,6 +197,8 @@
 
 
 /* NAND_FLASH */
+#define CONFIG_S3C2440_NAND_BOOT	1
+
 #define	CFG_MAX_NAND_DEVICE		1	/* The numbers of nand flash device */
 #define	NAND_MAX_CHIPS		1	/* Each Nand flash device is consist of 1 device */
 #define CFG_NAND_BASE		0	/* The base address of nand flash, will redefine when use nand flash */
