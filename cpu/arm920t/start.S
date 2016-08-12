@@ -203,31 +203,12 @@ reset:
 #endif
 
 #ifndef CONFIG_SKIP_RELOCATE_UBOOT
-@relocate:				/* relocate U-Boot to RAM	    */
 /************************ CHECK_CODE_POSITON ***************************/ 
 	adr	r0, _start		/* r0 <- current position of code   */
 	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
 	cmp     r0, r1                  /* don't reloc during debug         */
 	beq     stack_setup
 /************************ CHECK_CODE_POSITION **************************/
-@
-@/************************ CHECK_BOOT_POSITION **************************/
-@	ldr		r1, =((4<<28)|(3<<4)|(3<<2))		/* address of Internal sram 0X4000003C */
-@	mov		r0, #0
-@	str		r0, [r1]
-@
-@	mov		r1, #0x3c							/* address of mem 0x0000003c */
-@	ldr		r0, [r1]
-@	cmp		r0, #0
-@	bne		relocate
-@
-@	/* recovery */
-@	ldr		r0, =(0xdeadbeef)
-@	ldr		r1, =((4<<28)|(3<<4)|(3<<2))
-@	str		r0, [r1]
-@/************************ CHECK_BOOT_POSITION **************************/
-@
-
 
 /************************ NAND_BOOT ************************************/
 #ifdef CONFIG_S3C2440_NAND_BOOT 
@@ -237,7 +218,6 @@ reset:
 	#define STACK_BASE		0X33F00000
 	#define STACK_SIZE		0X8000
 
-@	#ifdef CONFIG_S3C2440
 	/* Offset */
 	#define oNFCONF 0x00	// 0x4e000000
 	#define oNFCONT 0x04	// 0x4e000004
@@ -250,7 +230,6 @@ reset:
 
 	@RESET NAND
 	mov		r1, #NAND_CTL_BASE
-@	ldr		r2, =((0<<12)|(3<<8)|(0<<4)|(3<<2)|(1<<1))
 	ldr		r2, =((7<<12)|(7<<8)|(7<<4)|(0<<0))
 	str		r2, [r1, #oNFCONF]
 
@@ -317,43 +296,26 @@ loop2:
 @loop3:
 @	b		loop3		@ infinite loop
 @
-#endif
-/****************************** NAND_BOOT ***************************************/
+#endif  /* CONFIG_S3C2440_NAND_BOOT */
+												   
+/****************************** NOR_BOOT ****************************************/	
+#ifdef CONFIG_S3C2440_NOR_BOOT 
 
-@
-@/****************************** NOR_BOOT ****************************************/
-@relocate:
-@	/************************** CHECK_FOR_MAGIC_NUMBER *************************/
-@		ldr		r1, =(0xdeadbeef)
-@		cmp		r0, r1
-@		bne		loop3
-@	/************************** CHECK_FOR_MAGIC_NUMBER *************************/
-@		adr		r0, _start						/* r0 <- current position of code */
-@		ldr		r1, _TEXT_BASE					/* test if run fram flash or RAM  */
-@		ldr		r2, _arm_boot_start			
-@		ldr		r3, _bss_start
-@		sub		r2, r3, r2						/* r2 <- size of armboot */
-@
-@	copy_loop:
-@		ldmia	r0!, {r3-r10}					/* copy from source address [r0] */
-@		stmia	r1!, {r3-r10}					/* copy to target address [r1]   */
-@		cmp		r1, r0							/* until source and address [r2] */
-@		ble		copy_loop
-@												   
-@/****************************** NOR_BOOT ****************************************/	
-@	
-@@
-@@	ldr	r2, _armboot_start
-@@	ldr	r3, _bss_start
-@@	sub	r2, r3, r2		/* r2 <- size of armboot            */
-@@	add	r2, r0, r2		/* r2 <- source end address         */
-@@
-@@copy_loop:
-@@	ldmia	r0!, {r3-r10}		/* copy from source address [r0]    */
-@@	stmia	r1!, {r3-r10}		/* copy to   target address [r1]    */
-@@	cmp	r0, r2			/* until source end addreee [r2]    */
-@@	ble	copy_loop
-@
+	/************************** CHECK_FOR_MAGIC_NUMBER *************************/
+		adr		r0, _start						/* r0 <- current position of code */
+		ldr		r1, _TEXT_BASE					/* test if run fram flash or RAM  */
+		ldr		r2, _armboot_start		
+		ldr		r3, _bss_start
+		sub		r2, r3, r2						/* r2 <- size of armboot */
+
+	copy_loop:
+		ldmia	r0!, {r3-r10}					/* copy from source address [r0] */
+		stmia	r1!, {r3-r10}					/* copy to target address [r1]   */
+		cmp		r0, r2							/* until source and address [r2] */
+		ble		copy_loop
+
+#endif /* CONFIG_S3C2440_NOR_BOOT */
+
 #endif	/* CONFIG_SKIP_RELOCATE_UBOOT */
 
 

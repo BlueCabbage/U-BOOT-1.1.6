@@ -83,13 +83,12 @@ static void s3c2440_nand_inithw(void)
 {
 	S3C2440_NAND * const s3c2440nand = S3C2440_GetBase_NAND();
 
-	#define		TACLS		0
-	#define		TWRPH0		4
-	#define		TWRPH1		2
-	
+	#define		TACLS		7
+	#define		TWRPH0		7
+	#define		TWRPH1		7
+
 	/* FOR S3C2440   */
-	/* SET THE CLOCK */
-	s3c2440nand->NFCONF = (TACLS<<12) | (TWRPH0<<8) | (TWRPH1<<4);
+	s3c2440nand->NFCONF = (TACLS<<12) | (TWRPH0<<8) | (TWRPH1<<4) | (0<<0);
 	/* INITIAL ECC, ENABLE NAND FLASH CONTROLER, ENABLE CS */
 	s3c2440nand->NFCONT = (1<<4) | (0<<1) | (1<<0);
 }
