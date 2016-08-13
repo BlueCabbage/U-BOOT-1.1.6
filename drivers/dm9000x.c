@@ -47,6 +47,7 @@ TODO: Homerun NIC and longrun NIC are not functional, only internal at the
 #include <net.h>
 #include <asm/io.h>
 
+
 #ifdef CONFIG_DRIVER_DM9000
 
 #include "dm9000x.h"
@@ -84,6 +85,7 @@ typedef struct board_info {
 	u8 device_wait_reset;	/* device state */
 	u8 nic_type;		/* NIC type */
 	unsigned char srom[128];
+	struct eth_device netdev;
 } board_info_t;
 board_info_t dmfe_info;
 
@@ -92,16 +94,19 @@ static int media_mode = DM9000_AUTO;
 static u8 nfloor = 0;
 
 /* function declaration ------------------------------------- */
-int eth_init(bd_t * bd);
-int eth_send(volatile void *, int);
-int eth_rx(void);
-void eth_halt(void);
+int dm9000_eth_init(bd_t * bd);
+int dm9000_eth_send(volatile void *, int);
+int dm9000_eth_rx(void);
+void dm9000_eth_halt(void);
 static int dm9000_probe(void);
 static u16 phy_read(int);
 static void phy_write(int, u16);
 static u16 read_srom_word(int);
 static u8 DM9000_ior(int);
 static void DM9000_iow(int reg, u8 value);
+static void dm9000_get_enetaddr(struct eth_device *dev);
+int dm9000_initialize(struct bd_info *bis); 
+
 
 /* DM9000 network board routine ---------------------------- */
 
@@ -268,10 +273,11 @@ dm9000_reset(void)
 	udelay(1000);		/* delay 1ms */
 }
 
+
 /* Initilize dm9000 board
 */
 int
-eth_init(bd_t * bd)
+dm9000_eth_init(bd_t * bd)
 {
 	int i, oft, lnk;
 	DM9000_DBG("eth_init()\n");
@@ -318,15 +324,20 @@ eth_init(bd_t * bd)
 	/* Activate DM9000 */
 	DM9000_iow(DM9000_RCR, RCR_DIS_LONG | RCR_DIS_CRC | RCR_RXEN);	/* RX enable */
 	DM9000_iow(DM9000_IMR, IMR_PAR);	/* Enable TX/RX interrupt mask */
+
+#if 0
 	i = 0;
+
 	while (!(phy_read(1) & 0x20)) {	/* autonegation complete bit */
 		udelay(1000);
 		i++;
-		if (i == 10000) {
-			printf("could not establish link\n");
-			return 0;
+		if (i == 1000) {
+//			printf("could not establish link\n");
+//			return 0;
+			break;
 		}
 	}
+#endif
 
 	/* see what we've got */
 	lnk = phy_read(17) >> 12;
@@ -352,12 +363,13 @@ eth_init(bd_t * bd)
 	return 0;
 }
 
+
 /*
   Hardware start transmission.
   Send a packet to media from the upper layer.
 */
 int
-eth_send(volatile void *packet, int length)
+dm9000_eth_send(volatile void *packet, int length)
 {
 	char *data_ptr;
 	u32 tmplen, i;
@@ -416,7 +428,7 @@ eth_send(volatile void *packet, int length)
   The interface is stopped when it is brought.
 */
 void
-eth_halt(void)
+dm9000_eth_halt(void)
 {
 	DM9000_DBG("eth_halt\n");
 
@@ -431,7 +443,7 @@ eth_halt(void)
   Received a packet and pass to upper layer
 */
 int
-eth_rx(void)
+dm9000_eth_rx(void)
 {
 	u8 rxbyte, *rdptr = (u8 *) NetRxPackets[0];
 	u16 RxStatus, RxLen = 0;
@@ -590,4 +602,36 @@ phy_write(int reg, u16 value)
 	DM9000_iow(DM9000_EPCR, 0x0);	/* Clear phyxcer write command */
 	DM9000_DBG("phy_write(reg:%d, value:%d)\n", reg, value);
 }
+
+static void
+dm9000_get_enetaddr(struct eth_device *dev)
+{
+	#if	!defined(CONFIG_DM9000_NO_SROM)
+		int i;
+		for ( i = 0; i < 3; i ++ ) {
+			phy_read(i, dev->enetaddr + (2 * i));
+		}
+	#endif
+}
+
+
+int
+dm9000_initialize(struct bd_info *bis) 
+{
+	struct eth_device *dev = &(dmfe_info.netdev);
+
+	// Load MAC address from EEPROM
+	dm9000_get_enetaddr(dev);
+
+	dev->init = dm9000_eth_init;
+	dev->halt = dm9000_eth_halt;
+	dev->send = dm9000_eth_send;
+	dev->recv = dm9000_eth_rx;
+	sprintf(dev->name, "dm9000");
+
+	eth_register(dev);
+
+	return 0;
+}
+
 #endif				/* CONFIG_DRIVER_DM9000 */

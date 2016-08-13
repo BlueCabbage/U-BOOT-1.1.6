@@ -54,8 +54,9 @@ extern int scc_initialize(bd_t*);
 extern int skge_initialize(bd_t*);
 extern int tsec_initialize(bd_t*, int, char *);
 extern int npe_initialize(bd_t *);
+extern int dm9000_initialize(bd_t *bis); 
 
-static struct eth_device *eth_devices, *eth_current;
+static struct eth_device *eth_current, *eth_devices;
 
 struct eth_device *eth_get_dev(void)
 {
@@ -250,6 +251,9 @@ int eth_initialize(bd_t *bis)
 #endif
 #if defined(CONFIG_RTL8169)
 	rtl8169_initialize(bis);
+#endif
+#ifdef CONFIG_DRIVER_DM9000
+	dm9000_initialize(bis); 
 #endif
 
 	if (!eth_devices) {

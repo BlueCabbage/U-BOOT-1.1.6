@@ -303,7 +303,8 @@ dm9000x.o: dm9000x.c \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/linux/byteorder/swab.h \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/linux/byteorder/generic.h \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/asm/io.h \
-  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/asm/memory.h
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/asm/memory.h \
+  dm9000x.h
 e1000.o: e1000.c e1000.h \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/common.h \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/config.h \

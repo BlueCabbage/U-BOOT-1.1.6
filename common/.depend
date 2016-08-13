@@ -1836,7 +1836,15 @@ env_nand.o: env_nand.c \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/asm/global_data.h \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/asm/mach-types.h \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/asm/setup.h \
-  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/asm/u-boot-arm.h
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/asm/u-boot-arm.h \
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/command.h \
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/environment.h \
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/malloc.h \
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/nand.h \
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/linux/mtd/compat.h \
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/linux/mtd/mtd.h \
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/linux/mtd/mtd-abi.h \
+  /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/linux/mtd/nand.h
 env_dataflash.o: env_dataflash.c \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/common.h \
   /home/zhaochao/Desktop/u-boot-116/u-boot-116/include/config.h \

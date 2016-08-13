@@ -69,9 +69,23 @@
 /*
  * Hardware drivers
  */
+#define CONFIG_DRIVER_DM9000	1
+
+#define CONFIG_NET_MULTI		1
+#define CONFIG_NET_RETRY_COUNT	20
+#define CONFIG_DM9000_BASE		0X20000300
+#define DM9000_IO				CONFIG_DM9000_BASE
+#define DM9000_DATA				(CONFIG_DM9000_BASE + 4)
+#define CONFIG_DM9000_USE_16BIT	
+#define CONFIG_NET_RANDOM_ETHADDR	1
+#define CONFIG_DM9000_NO_SROM	1
+#undef CONFIG_DM9000_DEBUG
+
+#if 0
 #define CONFIG_DRIVER_CS8900	1	/* we have a CS8900 on-board */
 #define CS8900_BASE		0x19000300
 #define CS8900_BUS16		1 /* the Linux driver does accesses as shorts */
+#endif
 
 /*
  * select serial console configuration
@@ -103,6 +117,8 @@
 			(CONFIG_CMD_DFL	 | \
 			CFG_CMD_CACHE	 | \
 			CFG_CMD_NAND	 | \
+			CFG_CMD_NET		 | \
+			CFG_CMD_PING	 | \
 			/*CFG_CMD_EEPROM |*/ \
 			/*CFG_CMD_I2C	 |*/ \
 			/*CFG_CMD_USB	 |*/ \
@@ -114,13 +130,34 @@
 #include <cmd_confdefs.h>
 
 #define CONFIG_BOOTDELAY	3
-/*#define CONFIG_BOOTARGS    	"root=ramfs devfs=mount console=ttySA0,9600" */
-/*#define CONFIG_ETHADDR	08:00:3e:26:0a:5b */
+#define CONFIG_BOOTARGS		"noinitrd root=/dev/nfs rw nfsroot=192.168.0.2:192.168.0.1::255.255.255.0 console=ttySAC0,115200 init=/linuxrc mem=64M"
+
+#define	CONFIG_CMD_NET		1   
+#define CONFGI_ETHADDR		08:08:11:18:12:27
+
 #define CONFIG_NETMASK          255.255.255.0
-#define CONFIG_IPADDR		10.0.0.110
-#define CONFIG_SERVERIP		10.0.0.1
+#define CONFIG_IPADDR		192.168.0.1
+#define CONFIG_SERVERIP		192.168.227.138
+#define CONFIG_GATEWAYIP	192.168.227.2
+#define CONFIG_OVERWRITE_ETHADDR_ONCE 
+
+
 /*#define CONFIG_BOOTFILE	"elinos-lart" */
-/*#define CONFIG_BOOTCOMMAND	"tftp; bootm" */
+#define CONFIG_BOOTCOMMAND	"nfs 0x30008000 192.168.0.1:/home/zImage.img; bootm"
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	"cabbage=bmp d 70000\0"       \
+	"stdin=serial\0"			  \
+	"stdout=serial\0"			  \
+	"stderr=serial\0"			  \
+	""
+
+#define	CFG_ENV_IS_IN_FLASH	1
+#define CFG_ENV_IS_IN_NAND	1
+#define CFG_ENV_SIZE		0x20000	/* Total Size of Environment Sector */
+#define CONFIG_ENV_OFFSET	0X60000
+
+
+
 
 #if (CONFIG_COMMANDS & CFG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	115200		/* speed to run kgdb serial port */
@@ -206,8 +243,6 @@
 #define CFG_FLASH_ERASE_TOUT	(5*CFG_HZ) /* Timeout for Flash Erase */
 #define CFG_FLASH_WRITE_TOUT	(5*CFG_HZ) /* Timeout for Flash Write */
 
-#define	CFG_ENV_IS_IN_FLASH	1
-#define CFG_ENV_SIZE		0x10000	/* Total Size of Environment Sector */
 
 
 

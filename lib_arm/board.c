@@ -72,9 +72,19 @@ extern void dataflash_print_info(void);
 const char version_string[] =
 	U_BOOT_VERSION" (" __DATE__ " - " __TIME__ ")"CONFIG_IDENT_STRING;
 
+
+#if 0
+
 #ifdef CONFIG_DRIVER_CS8900
 extern void cs8900_get_enetaddr (uchar * addr);
 #endif
+
+#ifdef CONFIG_DRIVER_DM9000
+extern void cs8900_get_enetaddr (uchar * addr);
+#endif
+
+#endif
+
 
 #ifdef CONFIG_DRIVER_RTL8019
 extern void rtl8019_get_enetaddr (uchar * addr);
@@ -367,6 +377,7 @@ void start_armboot (void)
 #ifdef CONFIG_DRIVER_CS8900
 	cs8900_get_enetaddr (gd->bd->bi_enetaddr);
 #endif
+
 
 #if defined(CONFIG_DRIVER_SMC91111) || defined (CONFIG_DRIVER_LAN91C96)
 	if (getenv ("ethaddr")) {
