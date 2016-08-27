@@ -42,6 +42,10 @@
 #define CONFIG_SYS_CLK_FREQ	12000000/* the SMDK2410 has 12MHz input clock */
 
 
+/* The Kernel tags */
+#define CONFIG_SETUP_MEMORY_TAGS	1 
+#define CONFIG_CMDLINE_TAG			1
+
 /* ENV */
 //// NOR FLASH:
 //#define CONFIG_ENV_IS_IN_FLASH		1
