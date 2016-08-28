@@ -130,6 +130,10 @@
 			CFG_CMD_DATE	 | \
 			CFG_CMD_ELF)
 
+/* Support YAFFS file system */
+#define ENABLE_CMD_NAND_YAFF	1
+
+
 /* this must be included AFTER the definition of CONFIG_COMMANDS (if any) */
 #include <cmd_confdefs.h>
 

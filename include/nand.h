@@ -78,6 +78,9 @@ struct nand_write_options {
 	int pad;		/* pad to page size */
 	int blockalign;		/* 1|2|4 set multiple of eraseblocks
 				 * to align to */
+	#if defined(ENABLE_CMD_NAND_YAFF)
+		int skipfirstblk; /* skip the first block when write to nand flash */
+	#endif
 };
 
 typedef struct nand_write_options nand_write_options_t;
