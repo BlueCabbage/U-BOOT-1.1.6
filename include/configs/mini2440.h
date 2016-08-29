@@ -138,7 +138,9 @@
 #include <cmd_confdefs.h>
 
 #define CONFIG_BOOTDELAY	3
-#define CONFIG_BOOTARGS		"noinitrd root=/dev/nfs rw nfsroot=192.168.0.2:192.168.0.1::255.255.255.0 console=ttySAC0,115200 init=/linuxrc mem=64M"
+//#define CONFIG_BOOTARGS		"noinitrd root=/dev/nfs rw nfsroot=192.168.0.2:192.168.0.1::255.255.255.0 console=ttySAC0,115200 init=/linuxrc mem=64M"
+
+#define CONFIG_BOOTARGS		"noinitrd root=/dev/mtdblock1 rw console=ttySAC0,115200 init=/linuxrc mem=64M"
 
 #define	CONFIG_CMD_NET		1   
 #define CONFGI_ETHADDR		08:08:11:18:12:27
@@ -151,7 +153,10 @@
 
 
 /*#define CONFIG_BOOTFILE	"elinos-lart" */
-#define CONFIG_BOOTCOMMAND	"nfs 0x30008000 192.168.0.1:/home/zImage.img; bootm"
+//#define CONFIG_BOOTCOMMAND	"nfs 0x30008000 192.168.0.1:/home/zImage.img; bootm"
+
+#define CONFIG_BOOTCOMMAND	"nand read 0x30008000 0x0 0x800000; bootm 0x30008000"
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"cabbage=bmp d 70000\0"       \
 	"stdin=serial\0"			  \
