@@ -140,7 +140,7 @@
 #define CONFIG_BOOTDELAY	3
 //#define CONFIG_BOOTARGS		"noinitrd root=/dev/nfs rw nfsroot=192.168.0.2:192.168.0.1::255.255.255.0 console=ttySAC0,115200 init=/linuxrc mem=64M"
 
-#define CONFIG_BOOTARGS		"noinitrd root=/dev/mtdblock1 rw console=ttySAC0,115200 init=/linuxrc mem=64M"
+#define CONFIG_BOOTARGS		"noinitrd root=/dev/mtdblock1 rootfstype=jffs2 rootfstype=jffs2 console=ttySAC0,115200 init=/linuxrc mem=64M"
 
 #define	CONFIG_CMD_NET		1   
 #define CONFGI_ETHADDR		08:08:11:18:12:27
